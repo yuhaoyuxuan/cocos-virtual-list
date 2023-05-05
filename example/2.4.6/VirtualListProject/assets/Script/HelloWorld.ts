@@ -32,5 +32,13 @@ export default class NewClass extends cc.Component {
         this.test2.refreshData(dataL);
         this.test3.refreshData(dataL);
         this.test4.refreshData(dataL);
+
+        setTimeout(()=>{
+            dataL[1]="666";
+            this.test1.refreshData(dataL);
+            this.test2.refreshData(dataL);
+            this.test3.refreshData(dataL);
+            this.test4.refreshData(dataL);
+        },3000)
     }
 }

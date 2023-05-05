@@ -39,8 +39,10 @@ export default class AVirtualScrollView extends cc.ScrollView {
     /**布局*/
     private contentLayout:cc.Layout;
 
-    private oldIdx:number=0;
-    private newIdx:number=0;
+    /**强制刷新 */
+    private forcedRefresh:boolean;
+    /**刷新 */
+    private refresh:boolean;
     
     protected onLoad(): void {
         this.itemList = [];
@@ -78,7 +80,7 @@ export default class AVirtualScrollView extends cc.ScrollView {
     /**利用cc.ScrollView本身方法 来标记滑动中 */
     setContentPosition(position:cc.Vec2){
         super.setContentPosition(position);
-        ++this.oldIdx;
+        this.refresh = true;
     }
 
      /**
@@ -111,9 +113,10 @@ export default class AVirtualScrollView extends cc.ScrollView {
         if(this.interval){
             clearInterval(this.interval);
         }
-
         this.addItem();
         this.refreshContentSize();
+        this.forcedRefresh = true;
+        this.refresh = true;
         this.interval = setInterval(this.refreshItem.bind(this),1000/10);
     }
 
@@ -187,10 +190,9 @@ export default class AVirtualScrollView extends cc.ScrollView {
     /**刷新预制体位置 和 数据填充 */
     private refreshItem():void
     {
-        if(this.oldIdx == this.newIdx){
+        if(!this.refresh){
             return;
         }
-        this.newIdx = this.oldIdx;
         switch(this.contentLayout.type){
             case cc.Layout.Type.HORIZONTAL:
                 this.refreshHorizontal();
@@ -202,6 +204,8 @@ export default class AVirtualScrollView extends cc.ScrollView {
                 this.refreshGrid();
             break;
         }
+        this.refresh = false;
+        this.forcedRefresh = false;
     }
 
     /**刷新水平 */
@@ -222,7 +226,7 @@ export default class AVirtualScrollView extends cc.ScrollView {
             idx = (start + i) % itemListLen;
             item = this.itemList[idx];
             tempV = this.startPos.x + ((start + i) * this.itemW);
-            if(item.x != tempV){
+            if(item.x != tempV || this.forcedRefresh){
                 console.log("修改的数据="+(start+i))
                 item.x = tempV;
                 this.itemRendererList[idx].data = this.dataList[start+i];
@@ -251,7 +255,7 @@ export default class AVirtualScrollView extends cc.ScrollView {
             idx = (start+i)%itemListLen;
             item = this.itemList[idx];
             tempV = this.startPos.y+(-(start+i)*this.itemH);
-            if(item.y != tempV){
+            if(item.y != tempV || this.forcedRefresh){
                 console.log("修改的数据="+(start+i))
                 item.y = tempV;
                 this.itemRendererList[idx].data = this.dataList[start+i];
@@ -299,7 +303,7 @@ export default class AVirtualScrollView extends cc.ScrollView {
                 tempY = this.startPos.y+ -(Math.floor((start+i)/this.horizontalCount)) * this.itemH;
             }
             
-            if(item.y != tempY || item.x != tempX){
+            if(item.y != tempY || item.x != tempX || this.forcedRefresh){
                 console.log("修改的数据="+(start+i))
                 item.x = tempX;
                 item.y = tempY;

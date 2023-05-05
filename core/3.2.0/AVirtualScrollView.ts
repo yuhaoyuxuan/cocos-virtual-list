@@ -40,8 +40,10 @@ export default class AVirtualScrollView extends ScrollView {
     /**布局*/
     private contentLayout:Layout;
 
-    private oldIdx:number=0;
-    private newIdx:number=0;
+    /**强制刷新 */
+    private forcedRefresh:boolean;
+    /**刷新 */
+    private refresh:boolean;
     
     private _uiTransform:UITransform;
 
@@ -83,7 +85,7 @@ export default class AVirtualScrollView extends ScrollView {
     /**利用ScrollView本身方法 来标记滑动中 */
     _setContentPosition(position: Vec3){
         super['_setContentPosition'](position);
-        ++this.oldIdx;
+        this.refresh = true;
     }
 
      /**
@@ -119,8 +121,9 @@ export default class AVirtualScrollView extends ScrollView {
 
         this.addItem();
         this.refreshContentSize();
+        this.forcedRefresh = true;
+        this.refresh = true;
         this.interval = setInterval(this.refreshItem.bind(this),1000/10);
-        this.newIdx = 1;
     }
 
 
@@ -193,10 +196,10 @@ export default class AVirtualScrollView extends ScrollView {
     /**刷新预制体位置 和 数据填充 */
     private refreshItem():void
     {
-        if(this.oldIdx == this.newIdx){
+        if(!this.refresh){
             return;
         }
-        this.newIdx = this.oldIdx;
+
         switch(this.contentLayout.type){
             case Layout.Type.HORIZONTAL:
                 this.refreshHorizontal();
@@ -208,6 +211,10 @@ export default class AVirtualScrollView extends ScrollView {
                 this.refreshGrid();
             break;
         }
+
+
+        this.refresh = false;
+        this.forcedRefresh = false;
     }
 
     /**刷新水平 */
@@ -229,7 +236,7 @@ export default class AVirtualScrollView extends ScrollView {
             item = this.itemList[idx];
             pos = item.getPosition();
             tempV = this.startPos.x + ((start + i) * this.itemW);
-            if(pos.x != tempV){
+            if(pos.x != tempV || this.forcedRefresh){
                 console.log("修改的数据="+(start+i))
                 pos.x = tempV;
                 item.position = pos;
@@ -260,7 +267,7 @@ export default class AVirtualScrollView extends ScrollView {
             item = this.itemList[idx];
             pos = item.getPosition();
             tempV = this.startPos.y+(-(start+i)*this.itemH);
-            if(pos.y != tempV){
+            if(pos.y != tempV || this.forcedRefresh){
                 console.log("修改的数据="+(start+i))
                 pos.y = tempV;
                 item.position = pos;
@@ -310,7 +317,7 @@ export default class AVirtualScrollView extends ScrollView {
                 tempY = this.startPos.y+ -(Math.floor((start+i)/this.horizontalCount)) * this.itemH;
             }
             
-            if(pos.y != tempY || pos.x != tempX){
+            if(pos.y != tempY || pos.x != tempX || this.forcedRefresh){
                 console.log("修改的数据="+(start+i))
                 pos.x = tempX;
                 pos.y = tempY;
