@@ -1,11 +1,16 @@
 {
-  "__version__": "1.0.1",
+  "__version__": "1.0.2",
   "general": {
     "designResolution": {
       "width": 1920,
       "height": 1080,
       "fitWidth": false,
       "fitHeight": true
+    }
+  },
+  "fbx": {
+    "legacyFbxImporter": {
+      "visible": true
     }
   }
 }

@@ -1,5 +1,5 @@
 import { _decorator, Component, Node, find, Label } from 'cc';
-import AItemRenderer from './core/AItemRenerer';
+import { AItemRenderer } from './core/AItemRenderer';
 const { ccclass, property } = _decorator;
 
 @ccclass('ItemGrid')

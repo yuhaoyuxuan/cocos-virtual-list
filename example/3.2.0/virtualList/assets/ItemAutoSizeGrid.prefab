@@ -13,7 +13,7 @@
   },
   {
     "__type__": "cc.Node",
-    "_name": "ItemGrid",
+    "_name": "ItemAutoSizeGrid",
     "_objFlags": 0,
     "__editorExtras__": {},
     "_parent": null,
@@ -245,7 +245,7 @@
       "a": 255
     },
     "_spriteFrame": {
-      "__uuid__": "20835ba4-6145-4fbc-a58a-051ce700aa3e@f9941",
+      "__uuid__": "7d8f9b89-4fd1-4c9f-a3ab-38ec7cded7ca@f9941",
       "__expectedType__": "cc.SpriteFrame"
     },
     "_type": 0,
@@ -268,7 +268,7 @@
     "fileId": "1fUGaP5iFB4KSA96HpbO4K"
   },
   {
-    "__type__": "ea76cnArY1OnK4dcoZ5o6xQ",
+    "__type__": "b5f2cANfkREoqk7++VyFsqR",
     "_name": "",
     "_objFlags": 0,
     "node": {
@@ -282,7 +282,7 @@
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "8el9gw0d1C8qd34UPeJqfD"
+    "fileId": "caOQ7646xAMrWsG2nq8I+q"
   },
   {
     "__type__": "cc.PrefabInfo",

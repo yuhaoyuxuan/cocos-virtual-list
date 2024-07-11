@@ -2,12 +2,12 @@
   "ver": "1.1.38",
   "importer": "prefab",
   "imported": true,
-  "uuid": "8ab4f841-9cd1-41cc-9c00-1f9544b4182d",
+  "uuid": "6eb9cd6d-59de-4988-866c-40cd8d8ffd8a",
   "files": [
     ".json"
   ],
   "subMetas": {},
   "userData": {
-    "syncNodeName": "ItemGrid"
+    "syncNodeName": "ItemAutoSizeGrid"
   }
 }
