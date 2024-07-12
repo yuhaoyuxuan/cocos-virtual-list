@@ -588,6 +588,10 @@ export default class AVirtualScrollView extends ScrollView {
         this.itemList = null;
         this.itemRendererList = null;
         this.posToSize = null;
+        this.itemPool.forEach(item => {
+            item.destroy();
+        })
+        this.itemPool = null;
         if (this.interval) {
             clearInterval(this.interval);
         }
