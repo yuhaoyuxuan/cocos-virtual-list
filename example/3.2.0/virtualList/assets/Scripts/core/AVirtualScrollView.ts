@@ -538,17 +538,21 @@ export default class AVirtualScrollView extends ScrollView {
     /**根据索引获取位置 */
     private getPos(idx: number): number {
         let position: number = 0;
+        let h: number, w: number;
         switch (this.contentLayout.type) {
             case Layout.Type.HORIZONTAL:
                 if (this.autoChildrenSize) {
                     //重置开始位置
                     if (idx == 0) {
-                        this.startPos.x = (this.posToSize[0]?.width ?? this.itemW) * this.anchorPoint.x;
+                        w = (this.posToSize[0]?.width ?? (this.itemH - this.contentLayout.spacingX));
+                        this.startPos.x = w * this.anchorPoint.x;
                     }
                     position += this.startPos.x + this.contentLayout.paddingLeft;
                     for (let i: number = 1; i <= idx; i++) {
-                        position += (this.posToSize[i - 1]?.width ?? this.itemW) * this.anchorPoint.x + this.contentLayout.spacingX;
-                        position += (this.posToSize[i]?.width ?? this.itemW) * this.anchorPoint.x;
+                        w = (this.posToSize[i - 1]?.width ?? (this.itemW - this.contentLayout.spacingX));
+                        position += w - w * this.anchorPoint.x + this.contentLayout.spacingX;
+                        w = (this.posToSize[i]?.width ?? (this.itemW - this.contentLayout.spacingX))
+                        position += w * this.anchorPoint.x;
                     }
                 } else {
                     position = this.startPos.x + idx * this.itemW;
@@ -558,12 +562,15 @@ export default class AVirtualScrollView extends ScrollView {
                 if (this.autoChildrenSize) {
                     //重置开始位置
                     if (idx == 0) {
-                        this.startPos.y = (this.posToSize[0]?.height ?? this.itemH) * this.anchorPoint.y;
+                        h = (this.posToSize[0]?.height ?? (this.itemH - this.contentLayout.spacingY))
+                        this.startPos.y = h - h * this.anchorPoint.y;
                     }
                     position -= this.startPos.y + this.contentLayout.paddingTop;
                     for (let i: number = 1; i <= idx; i++) {
-                        position -= (this.posToSize[i - 1]?.height ?? this.itemH) * this.anchorPoint.y + this.contentLayout.spacingY;
-                        position -= (this.posToSize[i]?.height ?? this.itemH) * this.anchorPoint.y;
+                        h = (this.posToSize[i - 1]?.height ?? (this.itemH - this.contentLayout.spacingY)) * this.anchorPoint.y + this.contentLayout.spacingY;
+                        position -= h;
+                        h = (this.posToSize[i]?.height ?? (this.itemH - this.contentLayout.spacingY))
+                        position -= h - h * this.anchorPoint.y;
                     }
                 } else {
                     position = this.startPos.y + -idx * this.itemH;
