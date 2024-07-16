@@ -132,7 +132,7 @@ export default class AVirtualScrollView extends ScrollView {
         }
         //第一个节点大小 计算起始位置
         this.startPos.x = nodeWidth * this.anchorPoint.x + this.contentLayout.paddingLeft;
-        this.startPos.y = -(nodeHeight * this.anchorPoint.y + this.contentLayout.paddingTop);
+        this.startPos.y = -(nodeHeight - nodeHeight * this.anchorPoint.y + this.contentLayout.paddingTop);
 
 
         //预制体宽高  
