@@ -6,13 +6,24 @@ const { ccclass, property } = _decorator;
 export class HelloWorld extends Component {
     @property({ type: [AVirtualScrollView] })
     public lists: AVirtualScrollView[] = [];
+    private idx: number = 0;
+    private dataL: string[] = [];
     start() {
-        var dataL: string[] = [];
+        let datas: string[] = []
         for (var i = 0; i < 100; i++) {
-            dataL.push(i + "");
+            datas.push(i + "");
         }
+
         this.lists.forEach(list => {
-            list.refreshData(dataL);
+            list?.refreshData(datas);
+        })
+    }
+
+    onAddItem(): void {
+        this.idx++;
+        this.dataL.push(this.idx + "");
+        this.lists.forEach(list => {
+            list?.refreshData(this.dataL);
         })
     }
 }

@@ -54,6 +54,10 @@ export default class AVirtualScrollView extends ScrollView {
     private itemRendererList: any[];
     /**数据列表 */
     private dataList: any[];
+    /**方向布局 */
+    private direction: Vec2 = new Vec2();
+    /**方向间隙 */
+    private padding: Vec2 = new Vec2();
     /**开始坐标 */
     private startPos: Vec2 = new Vec2();
     /**布局*/
@@ -130,9 +134,17 @@ export default class AVirtualScrollView extends ScrollView {
             nodeWidth = this.posToSize[0]?.width ?? nodeUITransform.width;
             nodeHeight = this.posToSize[0]?.height ?? nodeUITransform.height;
         }
+        //方向布局
+        this.direction.x = this.contentLayout.horizontalDirection == Layout.HorizontalDirection.LEFT_TO_RIGHT ? 1 : -1;
+        this.direction.y = this.contentLayout.verticalDirection == Layout.VerticalDirection.TOP_TO_BOTTOM ? -1 : 1;
+
+        //上下左右间隙
+        this.padding.x = (this.contentLayout.horizontalDirection == Layout.HorizontalDirection.LEFT_TO_RIGHT ? this.contentLayout.paddingLeft : this.contentLayout.paddingRight);
+        this.padding.y = (this.contentLayout.verticalDirection == Layout.VerticalDirection.TOP_TO_BOTTOM ? this.contentLayout.paddingTop : this.contentLayout.paddingBottom);
+
         //第一个节点大小 计算起始位置
-        this.startPos.x = nodeWidth * this.anchorPoint.x + this.contentLayout.paddingLeft;
-        this.startPos.y = -(nodeHeight - nodeHeight * this.anchorPoint.y + this.contentLayout.paddingTop);
+        this.startPos.x = (nodeWidth - nodeWidth * this.anchorPoint.x + this.padding.x) * this.direction.x;
+        this.startPos.y = (nodeHeight - nodeHeight * this.anchorPoint.y + this.padding.y) * this.direction.y;
 
 
         //预制体宽高  
@@ -282,16 +294,29 @@ export default class AVirtualScrollView extends ScrollView {
 
     /**延迟一帧标记刷新列表数据 */
     private delayChangeRefreshMark(node: Node) {
-        // console.log("预刷新子项状态===" + node['nowDataIdx']);
-
+        let pos = this.posToSize[node['nowDataIdx']];
         //记录数据源索引Node改变后的大小
-        this.posToSize[node['nowDataIdx']] = node._uiProps.uiTransformComp.contentSize.clone();
+        if (pos) {
+            if (pos.x == node._uiProps.uiTransformComp.contentSize.x && pos.y == node._uiProps.uiTransformComp.contentSize.y) {
+                return;
+            }
+            pos.x = node._uiProps.uiTransformComp.contentSize.x;
+            pos.y = node._uiProps.uiTransformComp.contentSize.y;
+        } else {
+            pos = node._uiProps.uiTransformComp.contentSize.clone();
+        }
+        console.log("预刷新子项状态===" + node['nowDataIdx']);
+        this.posToSize[node['nowDataIdx']] = pos;
+        //延迟一帧刷新
+        // this.unschedule(this.changeRefreshMark);
+        // this.scheduleOnce(this.changeRefreshMark, 0);
 
-        this.unschedule(this.changeRefreshMark);
-        this.scheduleOnce(this.changeRefreshMark, 0);
+        //立即刷新
+        this.refreshMark = true;
+        this.refreshItem();
     }
 
-    /**标记刷新列表数据 */
+    /**标记刷新列表等定时刷新数据 */
     private changeRefreshMark(): void {
         // console.log("刷新子项状态");
         this.refreshMark = true;
@@ -312,6 +337,12 @@ export default class AVirtualScrollView extends ScrollView {
                 } else {
                     value += dataListLen * this.itemW;
                 }
+
+                //排列方向从右到左排序的话，scrollview底层会计算content的位置，导致位置不对，content的宽度最小值改为父容器的大小
+                if (this.contentLayout.horizontalDirection == Layout.HorizontalDirection.RIGHT_TO_LEFT) {
+                    value = Math.max(value, this.content.parent?._uiProps.uiTransformComp.width ?? 0)
+                }
+
                 this.content._uiProps.uiTransformComp.width = value;
                 break;
             case Layout.Type.VERTICAL:
@@ -323,6 +354,12 @@ export default class AVirtualScrollView extends ScrollView {
                 } else {
                     value += dataListLen * this.itemH;
                 }
+
+                //排列方向从下到上排序的话，scrollview底层会计算content的位置，导致位置不对，content的高度最小值改为父容器的大小
+                if (this.contentLayout.verticalDirection == Layout.VerticalDirection.BOTTOM_TO_TOP) {
+                    value = Math.max(value, this.content.parent?._uiProps.uiTransformComp.height ?? 0)
+                }
+
                 this.content._uiProps.uiTransformComp.height = value;
                 break;
             case Layout.Type.GRID:
@@ -462,11 +499,11 @@ export default class AVirtualScrollView extends ScrollView {
             item = this.itemList[idx];
             pos = item.getPosition();
             if (isVDirection) {
-                tempX = this.startPos.x + (Math.floor((start + i) / this.verticalCount)) * this.itemW;
-                tempY = this.startPos.y + -((start + i) % this.verticalCount) * this.itemH;
+                tempX = this.startPos.x + this.direction.x * (Math.floor((start + i) / this.verticalCount)) * this.itemW;
+                tempY = this.startPos.y + this.direction.y * ((start + i) % this.verticalCount) * this.itemH;
             } else {
-                tempX = this.startPos.x + ((start + i) % this.horizontalCount) * this.itemW;
-                tempY = this.startPos.y + -(Math.floor((start + i) / this.horizontalCount)) * this.itemH;
+                tempX = this.startPos.x + this.direction.x * ((start + i) % this.horizontalCount) * this.itemW;
+                tempY = this.startPos.y + this.direction.y * (Math.floor((start + i) / this.horizontalCount)) * this.itemH;
             }
 
             if (pos.y != tempY || pos.x != tempX || this.forcedRefreshMark) {
@@ -503,7 +540,9 @@ export default class AVirtualScrollView extends ScrollView {
                 } else {
                     start = Math.floor(Math.abs(this.content.position.x) / this.itemW);
                 }
-                if (this.content.position.x > 0) {                  //超出边界处理
+
+                //超出边界处理
+                if (this.contentLayout.horizontalDirection == Layout.HorizontalDirection.LEFT_TO_RIGHT && this.content.position.x > 0 || this.contentLayout.horizontalDirection == Layout.HorizontalDirection.RIGHT_TO_LEFT && this.content.position.x < 0) {
                     start = 0;
                 }
                 break;
@@ -521,7 +560,9 @@ export default class AVirtualScrollView extends ScrollView {
                 } else {
                     start = Math.floor(Math.abs(this.content.position.y) / this.itemH);
                 }
-                if (this.content.position.y < 0) {                  //超出边界处理
+
+                //超出边界处理
+                if (this.contentLayout.verticalDirection == Layout.VerticalDirection.TOP_TO_BOTTOM && this.content.position.y < 0 || this.contentLayout.verticalDirection == Layout.VerticalDirection.BOTTOM_TO_TOP && this.content.position.y > 0) {
                     start = 0;
                 }
                 break;
@@ -545,17 +586,17 @@ export default class AVirtualScrollView extends ScrollView {
                     //重置开始位置
                     if (idx == 0) {
                         w = (this.posToSize[0]?.width ?? (this.itemH - this.contentLayout.spacingX));
-                        this.startPos.x = w * this.anchorPoint.x;
+                        this.startPos.x = w * this.anchorPoint.x * this.direction.x;
                     }
-                    position += this.startPos.x + this.contentLayout.paddingLeft;
+                    position += this.startPos.x + this.padding.x * this.direction.x;
                     for (let i: number = 1; i <= idx; i++) {
                         w = (this.posToSize[i - 1]?.width ?? (this.itemW - this.contentLayout.spacingX));
-                        position += w - w * this.anchorPoint.x + this.contentLayout.spacingX;
+                        position += (w - w * this.anchorPoint.x + this.contentLayout.spacingX) * this.direction.x;
                         w = (this.posToSize[i]?.width ?? (this.itemW - this.contentLayout.spacingX))
-                        position += w * this.anchorPoint.x;
+                        position += (w * this.anchorPoint.x) * this.direction.x;
                     }
                 } else {
-                    position = this.startPos.x + idx * this.itemW;
+                    position = this.startPos.x + idx * this.itemW * this.direction.x;
                 }
                 break;
             case Layout.Type.VERTICAL:
@@ -563,17 +604,17 @@ export default class AVirtualScrollView extends ScrollView {
                     //重置开始位置
                     if (idx == 0) {
                         h = (this.posToSize[0]?.height ?? (this.itemH - this.contentLayout.spacingY))
-                        this.startPos.y = h - h * this.anchorPoint.y;
+                        this.startPos.y = (h - h * this.anchorPoint.y) * this.direction.y;
                     }
-                    position -= this.startPos.y + this.contentLayout.paddingTop;
+                    position += this.startPos.y + this.padding.y * this.direction.y;
                     for (let i: number = 1; i <= idx; i++) {
                         h = (this.posToSize[i - 1]?.height ?? (this.itemH - this.contentLayout.spacingY)) * this.anchorPoint.y + this.contentLayout.spacingY;
-                        position -= h;
+                        position += h * this.direction.y;
                         h = (this.posToSize[i]?.height ?? (this.itemH - this.contentLayout.spacingY))
-                        position -= h - h * this.anchorPoint.y;
+                        position += (h - h * this.anchorPoint.y) * this.direction.y;
                     }
                 } else {
-                    position = this.startPos.y + -idx * this.itemH;
+                    position = this.startPos.y + idx * this.itemH * this.direction.y;
                 }
                 break;
             case Layout.Type.GRID:
