@@ -624,6 +624,30 @@ export default class AVirtualScrollView extends ScrollView {
         return position;
     }
 
+    private posToData: Vec2 = new Vec2();
+    /**
+     * 视图内容将在规定时间内滚动到data数据在视图的位置
+     * 暂时只支持 HORIZONTAL和VERTICAL
+     * @param data 数据
+     * @param timeInSecond  滚动时间（s）。 如果超时，内容将立即跳到数据位置
+     */
+    public scrollToData(data: any, timeInSecond?: number): void {
+        let idx = this.dataList.indexOf(data);
+        if (idx != -1) {
+            this.posToData.x = 0;
+            this.posToData.y = 1;
+            switch (this.contentLayout.type) {
+                case Layout.Type.HORIZONTAL:
+                    this.posToData.x = this.itemW * idx / (this.content._uiProps.uiTransformComp.width - this.node._uiProps.uiTransformComp.width - this.contentLayout.paddingLeft);
+                    break;
+                case Layout.Type.VERTICAL:
+                    this.posToData.y = 1 - this.itemH * idx / (this.content._uiProps.uiTransformComp.height - this.node._uiProps.uiTransformComp.height - this.contentLayout.paddingTop);
+                    break;
+            }
+            this.scrollTo(this.posToData, timeInSecond);
+        }
+    }
+
     protected onDestroy(): void {
         this.dataList = null;
         this.itemList = null;
